@@ -44,6 +44,7 @@ def register():
         db = get_db()
         error = None
 
+        flash_type = "error"
         if not email:
             error = 'Email is required.'
 
@@ -71,10 +72,11 @@ def register():
                 db.commit()
             except db.IntegrityError:
                 error = f"User with email: {email} is already registered."
+                flash_type = "warning"
             else:
                 return redirect(url_for("auth.login"))
 
-        flash(error)
+        flash(error, flash_type)
 
     return render_template('auth/register.html')
 
@@ -90,6 +92,7 @@ def login():
             'SELECT * FROM users WHERE email = ?', (email,)
         ).fetchone()
 
+        flash_type = "error"
         if user is None:
             error = 'Incorrect email account.'
         elif not check_password_hash(user['password'], password):
@@ -100,7 +103,7 @@ def login():
             session['user_id'] = user['id']
             return redirect(url_for('index'))
 
-        flash(error)
+        flash(error, flash_type)
 
     return render_template('auth/login.html')
 

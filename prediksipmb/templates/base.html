@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+
+        <title>{% block title %}{% endblock %} - Prediksi PMB</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+
+        <!-- BOOTSTRAP 5 -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+        <style>
+            .text-small {
+              font-size: 85%;
+            }
+
+            .dropdown-toggle:not(:focus) {
+              outline: 0;
+            }
+        </style>
+        {% block styles %}
+            <!-- Default styles -->
+        {% endblock %}
+    </head>
+    <body>
+        {% include "_navigation.html" %}
+
+        {% block content %}
+            <h1>Welcome to {{ title }}!</h1>
+        {% endblock content %}
+
+        <!-- BOOTSTRAP 5 -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        
+        {% block scripts %}
+            <!-- Default scripts -->
+        {% endblock %}
+
+        <script>
+            // Auto dismiss alerts after 5 seconds
+            setTimeout(function() {
+                var alert = document.querySelector('.alert');
+                if (alert) {
+                    var dismissButton = alert.querySelector('.btn-close');
+                    if (dismissButton) {
+                        dismissButton.click();  // Simulate a click on the dismiss button
+                    }
+                }
+            }, 3000);  // Time in milliseconds
+        </script>
+    </body>
+</html>
