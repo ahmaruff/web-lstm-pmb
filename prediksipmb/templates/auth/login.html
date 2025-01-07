@@ -7,7 +7,10 @@
 
 {% block content %}
     <form action="/auth/login" method="POST">
-        <img class="mb-4" src="{{ url_for('static', filename='/images/logo_pmb_fksp.png') }}" alt="" width="72">
+
+        <a href="/" class="mb-4 d-block">
+            <img class="" width="72" src="{{ url_for('static', filename='/images/logo_pmb_fksp.png') }}" alt="logo">
+        </a>
         <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
         <div class="form-floating mb-3">
              {% include "_flash.html" %}
