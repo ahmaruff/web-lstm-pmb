@@ -48,7 +48,13 @@ History
 <main>
   <div class="container py-4">
     <div class="p-5 mb-4 bg-body-tertiary rounded-3 min-vh-100">
+        <div class="mb-3 d-flex flex-row justify-content-between align-items-center"
         <h1> Histori Jumlah Mahasiswa Baru Tahunan </h1>
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-create-history">
+            Buat Histori baru
+        </button>
+        </div>
         {% if histories|length > 0 %}
         <div class="table-responsive">
             <table class="table table-hover">
