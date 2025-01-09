@@ -20,7 +20,7 @@ History
             <form id="create-history-form">
             <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="staticBackdropLabel">Masukkan Data Histori PMB</h1>
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Tambah Data Histori PMB</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -42,6 +42,57 @@ History
             </form>
         </div>
     </div>
+</div>
+<!-- end modal -->
+
+<!-- Edit Modal -->
+<div class="modal fade" id="modal-edit-history" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="edit-history-form">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Data Histori PMB</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-id">
+          <div class="mb-3">
+            <label for="edit-year" class="form-label">Tahun</label>
+            <input type="number" min="1900" max="9999" class="form-control" id="edit-year" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-student" class="form-label">Jumlah Mahasiswa</label>
+            <input type="number" min="0" class="form-control" id="edit-student" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- End modal -->
+
+<!-- Delete Modal -->
+<div class="modal fade" id="modal-delete-history" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete Confirmation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this record?</p>
+        <input type="hidden" id="delete-id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="confirm-delete-btn" type="button" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- end modal -->
 
@@ -73,8 +124,8 @@ History
                         <td>{{ history.year }}</td>
                         <td>{{ history.student }}</td>
                         <td>
-                            <a href="#" class="btn btn-warning">Edit</a>
-                            <a href="#" class="btn btn-danger">Delete</a>
+                            <button class="btn btn-warning btn-edit" data-id="{{ history.id }}" data-year="{{ history.year }}" data-student="{{ history.student }}">Edit</button>
+                            <button class="btn btn-danger btn-delete" data-id="{{ history.id }}">Delete</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -146,6 +197,94 @@ document.getElementById('create-history-form').addEventListener('submit', async 
         console.error(error);
     }
 });
+
+
+// Handle Edit Button Click
+document.querySelectorAll('.btn-edit').forEach(button => {
+  button.addEventListener('click', () => {
+    const id = button.getAttribute('data-id');
+    const year = button.getAttribute('data-year');
+    const student = button.getAttribute('data-student');
+
+    // Populate modal with data
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-year').value = year;
+    document.getElementById('edit-student').value = student;
+
+    // Show the edit modal
+    new bootstrap.Modal(document.getElementById('modal-edit-history')).show();
+  });
+});
+
+// Handle Edit Form Submission
+document.getElementById('edit-history-form').addEventListener('submit', async function (event) {
+    event.preventDefault();
+
+    const id = document.getElementById('edit-id').value;
+    const year = document.getElementById('edit-year').value;
+    const studentCount = document.getElementById('edit-student').value;
+
+    const csrfToken = document.getElementById('csrf_token').value;
+
+    try {
+        const response = await fetch(`/histories/update-history/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ year : year, student: studentCount }),
+        });
+
+        if (response.ok) {
+            // refresh page
+            location.reload();
+        } else {
+            alert('Failed to update record.');
+        }
+    } catch (error) {
+        alert('Failed to update record.');
+        console.error('Error:', error);
+    }
+});
+
+// Handle Delete Button Click
+document.querySelectorAll('.btn-delete').forEach(button => {
+    button.addEventListener('click', () => {
+        const id = button.getAttribute('data-id');
+        document.getElementById('delete-id').value = id;
+
+        // Show the delete modal
+        new bootstrap.Modal(document.getElementById('modal-delete-history')).show();
+    });
+});
+
+// Handle Delete Confirmation
+document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+    const id = document.getElementById('delete-id').value;
+    const csrfToken = document.getElementById('csrf_token').value;
+
+    try {
+        const response = await fetch(`/histories/delete-history/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        if (response.ok) {
+            // refresh
+            location.reload();
+        } else {
+            alert('Failed to delete record.');
+        }
+    } catch (error) {
+        alert('Failed to delete record.');
+        console.error('Error:', error);
+    }
+});
+
 </script>
 
 {% endblock %}

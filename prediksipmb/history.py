@@ -61,7 +61,7 @@ def storeHistory():
         try:
             db.execute(
                 """
-                INSERT INTO histories (year,student, created_at, updated_at)
+                INSERT INTO histories (year, student, created_at, updated_at)
                 VALUES ( ?, ?, ?, ?);
                 """,
                 (year, student, timestamp, timestamp)
@@ -78,8 +78,49 @@ def storeHistory():
             return jsonify({
                 'success': False,
                 'message': "Failed to save data"
-            })
+            }), 500
     else:
         # Collect error messages
         errors = {field: error[0] for field, error in form.errors.items()}
-        return jsonify({'success': False, 'errors': errors})
+        return jsonify({'success': False, 'errors': errors}), 500
+
+
+@bp.route('/update-history/<int:id>', methods=['PUT'])
+def updateHistory(id):
+    data = request.json
+    year = data.get('year')
+    student = data.get('student')
+
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        db = get_db()
+        db.execute(
+            """
+            UPDATE histories SET year = ?, student = ?, updated_at = ? WHERE id = ?
+            """,
+            (year, student, timestamp, id)
+        )
+        db.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f"Data updated: Year {year}, Student Count {student}"
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': "Failed to save data",
+            'error': str(e)
+
+        }), 500
+
+
+@bp.route('/delete-history/<int:id>', methods=['DELETE'])
+def delete_history(id):
+    try:
+        db = get_db()
+        db.execute('DELETE FROM histories WHERE id = ?', (id,))
+        db.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
