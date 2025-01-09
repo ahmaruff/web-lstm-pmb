@@ -41,7 +41,7 @@ def index():
     db = get_db()
     histories = db.execute(
         """
-        SELECT * FROM histories
+        SELECT * FROM histories ORDER BY year DESC
         """
     ).fetchall()
 
