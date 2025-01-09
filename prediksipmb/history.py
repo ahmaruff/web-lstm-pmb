@@ -36,6 +36,7 @@ def load_logged_in_user():
 
 
 @bp.route('/', methods=['GET'])
+@login_required
 def index():
     form = CreateHistoryForm()
     db = get_db()
