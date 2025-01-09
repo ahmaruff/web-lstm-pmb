@@ -1,32 +1,53 @@
 {% extends 'base.html' %}
 
+{% block title %}
+History
+{% endblock %}
+
 {% block styles %}
 {% endblock %}
 
 
 {% block content %}
+
+<div id="flash-messages">
+</div>
+
 <!-- Modal -->
 <div class="modal fade" id="modal-create-history" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Create History</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        ...
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Understood</button>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="create-history-form">
+            <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Masukkan Data Histori PMB</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="year" class="form-label">Tahun</label>
+                    <input type="number" min="1900" max="9999" class="form-control" id="year" placeholder="1984">
+                    <div class="text-danger" id="year-error"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="student" class="form-label">Jumlah Mahasiswa Baru</label>
+                    <input type="number" class="form-control" id="student" placeholder="">
+                    <div class="text-danger" id="student-error"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+            </form>
+        </div>
     </div>
-  </div>
 </div>
+<!-- end modal -->
 
 <main>
   <div class="container py-4">
-    <div class="p-5 mb-4 bg-body-tertiary rounded-3">
+    <div class="p-5 mb-4 bg-body-tertiary rounded-3 min-vh-100">
         <h1> Histori Jumlah Mahasiswa Baru Tahunan </h1>
         {% if histories|length > 0 %}
         <div class="table-responsive">
@@ -55,6 +76,9 @@
             </table>
         </div>
         {% else %}
+        <div class="my-3" style="display:none" id="form-feedback-container">
+            <div id="form-feedback"></div>
+        </div>
         <div class="my-3">
             <p class="">Maaf data histori tidak ditemukan. <a class="link-primary" data-bs-toggle="modal" data-bs-target="#modal-create-history" role="button">Buat histori</a></p>
         </div>
@@ -66,4 +90,56 @@
     </footer>
   </div>
 </main>
+
+<script>
+document.getElementById('create-history-form').addEventListener('submit', async function (event) {
+    event.preventDefault();
+
+    // Collect form data
+    const year = document.getElementById('year').value;
+    const studentCount = document.getElementById('student').value;
+    const feedback = document.getElementById('form-feedback');
+    const feedbackContainer = document.getElementById('form-feedback-container');
+    const csrfToken = document.getElementById('csrf_token').value;
+
+    try {
+        // Send data to the server
+        const response = await fetch('/histories/store-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                year: year,
+                student: studentCount,
+            }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // Refresh the page on success
+            location.reload();
+        } else {
+            feedbackContainer.style.display = "block";        
+            // Show error feedback
+            feedback.style.color = 'red';
+            feedback.textContent = result.errors
+            ? Object.values(result.errors).join('. ')
+            : result.message;
+
+            feedback.style.display = 'block';
+        }
+    } catch (error) {
+        feedbackContainer.style.display = "block";        
+        // Handle unexpected errors
+        feedback.style.color = 'red';
+        feedback.textContent = 'An unexpected error occurred. Please try again.';
+        feedback.style.display = 'block';
+        console.error(error);
+    }
+});
+</script>
+
 {% endblock %}
