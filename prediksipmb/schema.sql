@@ -13,7 +13,7 @@ CREATE TABLE users (
 
 CREATE TABLE histories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    year VARCHAR(255) NOT NULL,
+    year INTEGER NOT NULL,
     student INTEGER NOT NULL,
     created_at DATETIME NULL,
     updated_at DATETIME NULL
