@@ -88,20 +88,36 @@ class LSTMModel:
     def plot_predictions(self, raw_data, sequence_length=2, num_predictions=3):
         self.load()
         df = pd.DataFrame(raw_data)
-        last_sequence = df['jml_mhs'].values[-sequence_length:]
 
+        last_sequence = df['jml_mhs'].values[-sequence_length:]
         future_predictions = self.predict(last_sequence, num_predictions)
 
+        # Generate future years based on actual years
+        future_years = [df['tahun'].iloc[-1] + i for i in range(1, num_predictions + 1)]
+
+        # Plot historical and predicted data
         plt.figure(figsize=(12, 6))
         plt.plot(df['tahun'], df['jml_mhs'], 'bo-', label='Data Aktual', linewidth=2)
-        future_years = [df['tahun'].iloc[-1] + i for i in range(1, num_predictions + 1)]
         plt.plot(future_years, future_predictions, 'ro-', label='Prediksi LSTM', linewidth=2)
+
+        # Add labels to historical data points
+        for x, y in zip(df['tahun'], df['jml_mhs']):
+            plt.text(x, y - 0.02 * max(df['jml_mhs']), f'{y:.0f}', fontsize=8, ha='center', va='top')
+
+        # Add labels to predicted data points
+        for x, y in zip(future_years, future_predictions.flatten()):  # Use `.flatten()` to ensure y is scalar
+            plt.text(x, y - 0.02 * max(future_predictions), f'{y:.0f}', fontsize=8, ha='center', va='top')
+
         plt.xlabel('Tahun')
         plt.ylabel('Jumlah Mahasiswa')
-        plt.title('Prediksi Jumlah Mahasiswa dengan LSTM (Positive Constraint)')
-        plt.legend()
+        plt.title('Prediksi Jumlah Mahasiswa dengan LSTM')
+        plt.legend(loc='lower right')
         plt.grid(True)
 
+        # Ensure y-axis starts at 0
+        plt.ylim(bottom=0)
+
+        # Save the plot as a base64 string
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
         buf.seek(0)
