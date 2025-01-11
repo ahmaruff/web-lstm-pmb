@@ -32,6 +32,7 @@ def load_logged_in_user():
 
 
 @bp.route('/', methods=['GET'])
+@login_required
 def index():
     db = get_db()
     data = db.execute(
@@ -66,6 +67,7 @@ def index():
 
 
 @bp.route('/train', methods=['POST'])
+@login_required
 def train_model():
     db = get_db()
     data = db.execute(
@@ -85,6 +87,7 @@ def train_model():
 
 
 @bp.route('/predict', methods=['POST'])
+@login_required
 def predict():
     db = get_db()
     data = db.execute(

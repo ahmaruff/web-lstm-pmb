@@ -34,6 +34,7 @@ def load_logged_in_user():
 
 
 @bp.route('/', methods=['GET'])
+@login_required
 def index():
     db = get_db()
     histories = db.execute(
@@ -47,6 +48,7 @@ def index():
 
 # AJAX
 @bp.route('/store-history', methods=['POST'])
+@login_required
 def storeHistory():
 
     data = request.json
@@ -79,6 +81,7 @@ def storeHistory():
 
 
 @bp.route('/update-history/<int:id>', methods=['PUT'])
+@login_required
 def updateHistory(id):
     data = request.json
     year = data.get('year')
@@ -109,6 +112,7 @@ def updateHistory(id):
 
 
 @bp.route('/delete-history/<int:id>', methods=['DELETE'])
+@login_required
 def delete_history(id):
     try:
         db = get_db()

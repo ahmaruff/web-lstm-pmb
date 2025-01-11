@@ -7,6 +7,7 @@
 
 {% block content %}
     <form action="/auth/register" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <a href="/" class="mb-4 d-block">
             <img class="" width="72" src="{{ url_for('static', filename='/images/logo_pmb_fksp.png') }}" alt="logo">
         </a>
