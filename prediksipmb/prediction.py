@@ -50,6 +50,7 @@ def index():
     # Check if the model exists
     model_exists = os.path.exists(lstm_model.model_path)
     plot_url = None
+    evaluation_metrics = None
 
     if model_exists:
         # Load the pre-trained model
@@ -58,7 +59,10 @@ def index():
         # Generate the plot if the model exists
         plot_url = lstm_model.plot_predictions(data_dict, sequence_length=2, num_predictions=3)
 
-    return render_template('prediction/index.html', plot_url=plot_url, model_exists=model_exists)
+        # Evaluate the model
+        evaluation_metrics = lstm_model.evaluate(data_dict, sequence_length=2)
+
+    return render_template('prediction/index.html', plot_url=plot_url, model_exists=model_exists, evaluation_metrics=evaluation_metrics)
 
 
 @bp.route('/train', methods=['POST'])

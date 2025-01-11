@@ -4,32 +4,31 @@
 
 {% block styles %}
 <style>
-    .plot-container {
-        text-align: center;
-        margin-top: 20px;
-    }
 
     .plot-placeholder {
         font-style: italic;
         color: #6c757d;
     }
 
-    .btn-custom {
-        background-color: #0d6efd;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 16px;
-        border-radius: 5px;
-    }
-
-    .btn-custom:hover {
-        background-color: #0b5ed7;
-    }
-
     .loading {
         font-size: 16px;
         color: #0d6efd;
+    }
+
+    .evaluation-metrics {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #343a40;
+        text-align: left;
+    }
+
+    .evaluation-metrics ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .evaluation-metrics li {
+        margin-bottom: 5px;
     }
 </style>
 {% endblock %}
@@ -38,10 +37,10 @@
 <main>
   <div class="container py-4">
     <!-- Prediction Plot -->
-    <div class="plot-container">
+    <div class="container mt-5 text-center">
       {% if plot_url %}
-        <h2 class="mb-4">Grafik Prediksi</h2>
-        <img id="img-prediction" src="data:image/png;base64,{{ plot_url }}" alt="Plot Prediksi" class="img-fluid rounded shadow-sm" />
+        <h2 class="mb-2">Grafik Prediksi</h2>
+        <img id="img-prediction" src="data:image/png;base64,{{ plot_url }}" alt="Plot Prediksi" class="img-fluid rounded" />
       {% else %}
         <div class="plot-placeholder">
           Tidak ada grafik prediksi yang tersedia saat ini. Harap lakukan pelatihan model terlebih dahulu.
@@ -49,11 +48,28 @@
       {% endif %}
     </div>
 
+
+    <!-- Evaluation Metrics -->
+    {% if evaluation_metrics %}
+      <div class="evaluation-metrics">
+
+        <h2 class="mb-3 text-center">Evaluasi Model</h2>
+        <div  class="d-flex flex-row justify-content-center">
+            <ul>
+              <li><strong>Mean Squared Error (MSE):</strong> {{ evaluation_metrics['MSE'] }}</li>
+              <li><strong>Mean Absolute Error (MAE):</strong> {{ evaluation_metrics['MAE'] }}</li>
+              <li><strong>Root Mean Squared Error (RMSE):</strong> {{ evaluation_metrics['RMSE'] }}</li>
+              <li><strong>Mean Absolute Percentage Error (MAPE):</strong> {{ evaluation_metrics['MAPE'] }}%</li>
+            </ul>
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Action Buttons -->
-    <div class="mt-4">
+    <div class="mt-4 d-flex flex-row justify-content-center gap-3">
         <button class="btn btn-success" id="predict-btn">Prediksi</button>
-      <button class="btn btn-primary" id="train-btn">Latih {% if model_exists %} Ulang {% endif %} Model</button>
-      <div id="loading-message" class="loading" style="display:none;">Loading...</div>
+        <button class="btn btn-primary" id="train-btn">Latih {% if model_exists %} Ulang {% endif %} Model</button>
+        <div id="loading-message" class="loading text-center" style="display:none;">Loading...</div>
     </div>
 
     <!-- Footer -->

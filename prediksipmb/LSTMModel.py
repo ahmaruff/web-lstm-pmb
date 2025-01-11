@@ -128,8 +128,7 @@ class LSTMModel:
     def evaluate(self, raw_data, sequence_length=2):
         X, y = self.preprocess_data(raw_data, sequence_length)
         self.load()
-        y_pred = self.model.predict(X)
-        y_pred_real = self.scaler.inverse_transform(y_pred)
+        y_pred_real = self.scaler.inverse_transform(self.model.predict(X))
         y_real = self.scaler.inverse_transform(y.reshape(-1, 1))
 
         mse = mean_squared_error(y_real, y_pred_real)
@@ -138,8 +137,8 @@ class LSTMModel:
         mape = mean_absolute_percentage_error(y_real, y_pred_real)
 
         return {
-            'MSE': mse,
-            'MAE': mae,
-            'RMSE': rmse,
-            'MAPE': mape
+            'MSE': round(mse, 3),
+            'MAE': round(mae, 3),
+            'RMSE': round(rmse, 3),
+            'MAPE': round(mape, 3) 
         }
