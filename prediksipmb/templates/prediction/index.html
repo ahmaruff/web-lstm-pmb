@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Prediction{% endblock %}
+
+{% block styles %}
+<style>
+    .plot-container {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .plot-placeholder {
+        font-style: italic;
+        color: #6c757d;
+    }
+
+    .btn-custom {
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 5px;
+    }
+
+    .btn-custom:hover {
+        background-color: #0b5ed7;
+    }
+
+    .loading {
+        font-size: 16px;
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+  <div class="container py-4">
+    <!-- Prediction Plot -->
+    <div class="plot-container">
+      {% if plot_url %}
+        <h2 class="mb-4">Grafik Prediksi</h2>
+        <img id="img-prediction" src="data:image/png;base64,{{ plot_url }}" alt="Plot Prediksi" class="img-fluid rounded shadow-sm" />
+      {% else %}
+        <div class="plot-placeholder">
+          Tidak ada grafik prediksi yang tersedia saat ini. Harap lakukan pelatihan model terlebih dahulu.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-4">
+        <button class="btn btn-success" id="predict-btn">Prediksi</button>
+      <button class="btn btn-primary" id="train-btn">Latih {% if model_exists %} Ulang {% endif %} Model</button>
+      <div id="loading-message" class="loading" style="display:none;">Loading...</div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="pt-3 mt-4 text-body-secondary border-top">
+        Sistem Prediksi PMB © 2024
+    </footer>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Retrieve the CSRF token from the meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Handle the train button click
+    document.getElementById('train-btn').addEventListener('click', function () {
+      document.getElementById('loading-message').style.display = 'block';
+
+      fetch('/predictions/train', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken  // Include CSRF token in the header
+        },
+        body: JSON.stringify({})  // Add any necessary data here, or leave as an empty object
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('loading-message').style.display = 'none';
+        alert(data.message);
+        location.reload();  // Refresh page after training
+      })
+      .catch(error => {
+        document.getElementById('loading-message').style.display = 'none';
+        alert('Error training the model!');
+      });
+    });
+
+    // Handle the predict button click
+    document.getElementById('predict-btn').addEventListener('click', function () {
+      document.getElementById('loading-message').style.display = 'block';
+
+      fetch('/predictions/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken  // Include CSRF token in the header
+        },
+        body: JSON.stringify({})  // Add any necessary data here, or leave as an empty object
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('loading-message').style.display = 'none';
+        document.getElementById('img-prediction').setAttribute('src', 'data:image/png;base64,' + data.plot_url);
+      })
+      .catch(error => {
+        document.getElementById('loading-message').style.display = 'none';
+        alert('Error making prediction!');
+      });
+    });
+  });
+</script>
+{% endblock %}
+

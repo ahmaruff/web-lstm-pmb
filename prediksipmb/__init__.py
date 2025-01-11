@@ -44,6 +44,9 @@ def create_app(test_config=None):
     from . import history
     app.register_blueprint(history.bp)
 
+    from . import prediction
+    app.register_blueprint(prediction.bp)
+
     # a simple page that says hello
     @app.route('/hello')
     def hello():

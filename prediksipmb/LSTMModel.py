@@ -4,37 +4,44 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
+from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.optimizers import Adam
+
+import joblib  # Add joblib to save/load the scaler
 
 
 class LSTMModel:
-    def __init__(self, input_shape, model_path='lstm_model.h5'):
+    def __init__(self, input_shape, model_path='lstm_model.h5', scaler_path='scaler.pkl'):
         self.model = Sequential([
-            LSTM(32, activation='tanh', input_shape=input_shape, return_sequences=True),
+            LSTM(32, activation='tanh', return_sequences=True, input_shape=input_shape),
             Dropout(0.1),
             LSTM(16, activation='tanh'),
             Dropout(0.1),
             Dense(8, activation='relu'),
             Dense(1, activation='sigmoid')
         ])
-
         self.model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-            loss='mse',
+            optimizer=Adam(),
+            loss=MeanSquaredError(),
             metrics=['accuracy']
         )
-
         self.model_path = model_path
+        self.scaler_path = scaler_path  # Path to save/load the scaler
+        self.scaler = MinMaxScaler(feature_range=(0, 1))  # Initialize the scaler
 
-        self.scaler = MinMaxScaler(feature_range=(0, 1))
-
-    def preprocess_data(self, raw_data, sequence_length=2):
+    def preprocess_data(self, raw_data, sequence_length=2, fit_scaler=False):
         df = pd.DataFrame(raw_data)
-        scaled_data = self.scaler.fit_transform(df['jml_mhs'].values.reshape(-1, 1))
+
+        # Fit the scaler only if required (during training)
+        if fit_scaler:
+            self.scaler.fit(df['jml_mhs'].values.reshape(-1, 1))
+
+        # Transform the data
+        scaled_data = self.scaler.transform(df['jml_mhs'].values.reshape(-1, 1))
 
         X, y = [], []
         for i in range(len(scaled_data) - sequence_length):
@@ -46,13 +53,21 @@ class LSTMModel:
         return X, y
 
     def train(self, raw_data, sequence_length=2, epochs=200, batch_size=1):
-        X, y = self.preprocess_data(raw_data, sequence_length)
+        # Fit the scaler during training and transform the data
+        X, y = self.preprocess_data(raw_data, sequence_length, fit_scaler=True)
         early_stopping = EarlyStopping(monitor='loss', patience=30, restore_best_weights=True)
         history = self.model.fit(X, y, epochs=epochs, batch_size=batch_size, callbacks=[early_stopping], verbose=2)
+
+        # Save the trained model and scaler
         self.model.save(self.model_path)
+        joblib.dump(self.scaler, self.scaler_path)  # Save the fitted scaler
         return history
 
     def predict(self, last_sequence, num_predictions=3):
+        # Ensure the scaler is fitted before making predictions
+        if not hasattr(self.scaler, 'scale_'):
+            raise Exception("Scaler is not fitted yet. Call with fit_scaler=True during training.")
+        
         last_sequence = self.scaler.transform(np.array(last_sequence).reshape(-1, 1))
         predictions = []
         current_sequence = last_sequence.copy()
@@ -66,12 +81,15 @@ class LSTMModel:
         return self.scaler.inverse_transform(predictions)
 
     def load(self):
+        # Load the model and the scaler
         self.model = load_model(self.model_path)
+        self.scaler = joblib.load(self.scaler_path)  # Load the fitted scaler
 
     def plot_predictions(self, raw_data, sequence_length=2, num_predictions=3):
         self.load()
         df = pd.DataFrame(raw_data)
         last_sequence = df['jml_mhs'].values[-sequence_length:]
+
         future_predictions = self.predict(last_sequence, num_predictions)
 
         plt.figure(figsize=(12, 6))
