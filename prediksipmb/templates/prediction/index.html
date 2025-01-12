@@ -10,11 +10,6 @@
         color: #6c757d;
     }
 
-    .loading {
-        font-size: 16px;
-        color: #0d6efd;
-    }
-
     .evaluation-metrics {
         margin-top: 20px;
         font-size: 14px;
@@ -35,104 +30,147 @@
 
 {% block content %}
 <main>
-  <div class="container py-4">
-    <!-- Prediction Plot -->
-    <div class="container mt-5 text-center">
-      {% if plot_url %}
-        <h2 class="mb-2">Grafik Prediksi</h2>
-        <img id="img-prediction" src="data:image/png;base64,{{ plot_url }}" alt="Plot Prediksi" class="img-fluid rounded" />
-      {% else %}
-        <div class="plot-placeholder">
-          Tidak ada grafik prediksi yang tersedia saat ini. Harap lakukan pelatihan model terlebih dahulu.
+    <div class="container py-4">
+        <!-- Action Buttons -->
+        <div class="my-4 d-flex flex-row justify-content-start gap-3">
+            {% if model_exists %}
+            <button class="btn btn-success" id="predict-btn">Prediksi</button>
+            {% endif %}
+            <button class="btn btn-primary" id="train-btn">Latih {% if model_exists %} Ulang {% endif %} Model</button>
         </div>
-      {% endif %}
-    </div>
 
-
-    <!-- Evaluation Metrics -->
-    {% if evaluation_metrics %}
-      <div class="evaluation-metrics">
-
-        <h2 class="mb-3 text-center">Evaluasi Model</h2>
-        <div  class="d-flex flex-row justify-content-center">
-            <ul>
-              <li><strong>Mean Squared Error (MSE):</strong> {{ evaluation_metrics['MSE'] }}</li>
-              <li><strong>Mean Absolute Error (MAE):</strong> {{ evaluation_metrics['MAE'] }}</li>
-              <li><strong>Root Mean Squared Error (RMSE):</strong> {{ evaluation_metrics['RMSE'] }}</li>
-              <li><strong>Mean Absolute Percentage Error (MAPE):</strong> {{ evaluation_metrics['MAPE'] }}%</li>
-            </ul>
+        <div id="loading-message" class="text-center my-2 text-primary fst-italic fs-4" style="display:none;">
+            Loading...
+            <br>
+            Model sedang memproses...
+            <br>
+            Harap tunggu hingga selesai :)
         </div>
-      </div>
-    {% endif %}
+    
+        <div class="evaluation-metrics" id="training-results" style="display: none;">
+            <h2 class="mb-3 text-center">Hasil Training</h2>
+            <div  class="d-flex flex-row justify-content-center">
+                <ul id="metrics-list">
+                </ul>
+            </div>
+        </div>
 
-    <!-- Action Buttons -->
-    <div class="mt-4 d-flex flex-row justify-content-center gap-3">
-        <button class="btn btn-success" id="predict-btn">Prediksi</button>
-        <button class="btn btn-primary" id="train-btn">Latih {% if model_exists %} Ulang {% endif %} Model</button>
-        <div id="loading-message" class="loading text-center" style="display:none;">Loading...</div>
+        <!-- Prediction Plot -->
+        <div class="container mt-5 text-center">
+        {% if plot_url %}
+            <h2 class="mb-2">Grafik Prediksi</h2>
+            <img id="img-prediction" src="data:image/png;base64,{{ plot_url }}" alt="Plot Prediksi" class="img-fluid rounded" />
+        {% else %}
+            <div class="plot-placeholder">
+                Tidak ada grafik prediksi yang tersedia saat ini. Harap lakukan pelatihan model terlebih dahulu.
+            </div>
+        {% endif %}
+        </div>
+
+        <!-- Evaluation Metrics -->
+        {% if evaluation_metrics %}
+        <div class="evaluation-metrics">
+
+            <h2 class="mb-3 text-center">Evaluasi Model</h2>
+            <div  class="d-flex flex-row justify-content-center">
+                <ul>
+                  <li><strong>Mean Squared Error (MSE):</strong> {{ evaluation_metrics['MSE'] }}</li>
+                  <li><strong>Mean Absolute Error (MAE):</strong> {{ evaluation_metrics['MAE'] }}</li>
+                  <li><strong>Root Mean Squared Error (RMSE):</strong> {{ evaluation_metrics['RMSE'] }}</li>
+                  <li><strong>Mean Absolute Percentage Error (MAPE):</strong> {{ evaluation_metrics['MAPE'] }}%</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if training_logs %}
+        <hr>
+        <div class="mt-4">
+            <h2 class="mb-3 text-center">Log Pelatihan Model</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Loss</th>
+                        <th>Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in training_logs %}
+                    <tr>
+                        <td>{{ log['training_date'] }}</td>
+                        <td>{{ log['loss']|round(3) }}</td>
+                        <td>{{ log['accuracy']|default('N/A')|round(3) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <footer class="pt-3 mt-4 text-body-secondary border-top">
+            Sistem Prediksi PMB © 2024
+        </footer>
     </div>
-
-    <!-- Footer -->
-    <footer class="pt-3 mt-4 text-body-secondary border-top">
-        Sistem Prediksi PMB © 2024
-    </footer>
-  </div>
 </main>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Retrieve the CSRF token from the meta tag
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     // Handle the train button click
     document.getElementById('train-btn').addEventListener('click', function () {
-      document.getElementById('loading-message').style.display = 'block';
+        document.getElementById('loading-message').style.display = 'block';
 
-      fetch('/predictions/train', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken  // Include CSRF token in the header
-        },
-        body: JSON.stringify({})  // Add any necessary data here, or leave as an empty object
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('loading-message').style.display = 'none';
-        alert(data.message);
-        location.reload();  // Refresh page after training
-      })
-      .catch(error => {
-        document.getElementById('loading-message').style.display = 'none';
-        alert('Error training the model!');
-      });
+        fetch('/predictions/train', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken  // Include CSRF token in the header
+            },
+            body: JSON.stringify({})  // Add any necessary data here, or leave as an empty object
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            document.getElementById('loading-message').style.display = 'none';
+            alert(data.message);
+            window.location.reload();
+        })
+        .catch(error => {
+            console.log(error)
+            document.getElementById('loading-message').style.display = 'none';
+            alert('Error training the model!');
+        });
     });
 
     // Handle the predict button click
     document.getElementById('predict-btn').addEventListener('click', function () {
-      document.getElementById('loading-message').style.display = 'block';
+        document.getElementById('loading-message').style.display = 'block';
 
-      fetch('/predictions/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken  // Include CSRF token in the header
-        },
-        body: JSON.stringify({})  // Add any necessary data here, or leave as an empty object
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('loading-message').style.display = 'none';
-        document.getElementById('img-prediction').setAttribute('src', 'data:image/png;base64,' + data.plot_url);
-      })
-      .catch(error => {
-        document.getElementById('loading-message').style.display = 'none';
-        alert('Error making prediction!');
-      });
+        fetch('/predictions/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken  // Include CSRF token in the header
+            },
+            body: JSON.stringify({})  // Add any necessary data here, or leave as an empty object
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loading-message').style.display = 'none';
+            document.getElementById('img-prediction').setAttribute('src', 'data:image/png;base64,' + data.plot_url);
+        })
+        .catch(error => {
+            document.getElementById('loading-message').style.display = 'none';
+            alert('Error making prediction!');
+        });
     });
-  });
+});
 </script>
 {% endblock %}
 

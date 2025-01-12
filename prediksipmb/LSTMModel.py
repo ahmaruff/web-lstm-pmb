@@ -1,4 +1,7 @@
 import io
+from datetime import datetime
+import os
+import json
 import base64
 import numpy as np
 import pandas as pd
@@ -55,19 +58,37 @@ class LSTMModel:
     def train(self, raw_data, sequence_length=2, epochs=200, batch_size=1):
         # Fit the scaler during training and transform the data
         X, y = self.preprocess_data(raw_data, sequence_length, fit_scaler=True)
-        early_stopping = EarlyStopping(monitor='loss', patience=30, restore_best_weights=True)
-        history = self.model.fit(X, y, epochs=epochs, batch_size=batch_size, callbacks=[early_stopping], verbose=2)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True)
+
+        history = self.model.fit(
+            X, y,
+            epochs=epochs,
+            batch_size=batch_size,
+            callbacks=[early_stopping],
+            verbose=2
+        )
 
         # Save the trained model and scaler
         self.model.save(self.model_path)
         joblib.dump(self.scaler, self.scaler_path)  # Save the fitted scaler
-        return history
+
+        # Ambil hasil akhir training
+        final_loss = history.history['loss'][-1]
+        final_accuracy = history.history.get('accuracy', [None])[-1]
+        training_date = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+        return {
+            'history': history.history,
+            'loss': final_loss,
+            'accuracy': final_accuracy,
+            'training_date': training_date
+        }
 
     def predict(self, last_sequence, num_predictions=3):
         # Ensure the scaler is fitted before making predictions
         if not hasattr(self.scaler, 'scale_'):
             raise Exception("Scaler is not fitted yet. Call with fit_scaler=True during training.")
-        
+
         last_sequence = self.scaler.transform(np.array(last_sequence).reshape(-1, 1))
         predictions = []
         current_sequence = last_sequence.copy()

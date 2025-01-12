@@ -1,4 +1,5 @@
 import functools
+from datetime import datetime
 import os
 from flask import (
     Blueprint, g, redirect, render_template, request, session, url_for, jsonify
@@ -52,6 +53,7 @@ def index():
     model_exists = os.path.exists(lstm_model.model_path)
     plot_url = None
     evaluation_metrics = None
+    training_logs = None
 
     if model_exists:
         # Load the pre-trained model
@@ -63,7 +65,17 @@ def index():
         # Evaluate the model
         evaluation_metrics = lstm_model.evaluate(data_dict, sequence_length=2)
 
-    return render_template('prediction/index.html', plot_url=plot_url, model_exists=model_exists, evaluation_metrics=evaluation_metrics)
+        # Ambil 5 log training terakhir
+        training_logs = db.execute(
+            """
+            SELECT loss, accuracy, training_date
+            FROM training_logs
+            ORDER BY id DESC
+            LIMIT 5
+            """
+        ).fetchall()
+
+    return render_template('prediction/index.html', plot_url=plot_url, model_exists=model_exists, evaluation_metrics=evaluation_metrics, training_logs=training_logs)
 
 
 @bp.route('/train', methods=['POST'])
@@ -80,10 +92,25 @@ def train_model():
     data_dict = {'tahun': [row['year'] for row in data], 'jml_mhs': [row['student'] for row in data]}
     lstm_model = LSTMModel(input_shape=(2, 1))
 
-    # Train the model and save it
-    lstm_model.train(data_dict, sequence_length=2, epochs=200, batch_size=1)
+    # Train the model and get training metrics
+    result = lstm_model.train(data_dict, sequence_length=2, epochs=200, batch_size=1)
 
-    return jsonify({'message': 'Model trained successfully!', 'status': 'success'})
+    # Simpan hasil training ke database
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    db.execute(
+        """
+        INSERT INTO training_logs (loss, accuracy, training_date, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (result['loss'], result['accuracy'], result['training_date'], timestamp, timestamp)
+    )
+    db.commit()
+
+    return jsonify({
+        'message': 'Model trained successfully!',
+        'status': 'success',
+        'result': result
+    })
 
 
 @bp.route('/predict', methods=['POST'])
